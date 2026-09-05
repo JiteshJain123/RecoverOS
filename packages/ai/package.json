@@ -1,0 +1,18 @@
+{
+  "name": "@recoveros/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@recoveros/config": "workspace:*",
+    "@recoveros/database": "workspace:*",
+    "@recoveros/observability": "workspace:*",
+    "@recoveros/strategy": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}
