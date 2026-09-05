@@ -74,6 +74,7 @@ export function probeVariant(status: ProbeStatus): BadgeVariant {
     case "OK":
       return "success";
     case "UNREACHABLE":
+    case "RATE_LIMITED":
       return "warning";
     case "FAILED":
       return "danger";

@@ -11,13 +11,18 @@
  * defensively to any free-text detail before it can leave the process.
  */
 import { type Env } from "@recoveros/config";
-import { GeminiConfigError, GeminiError, loadGeminiConfig } from "@recoveros/ai";
+import { GeminiConfigError, GeminiError, GeminiRequestError, loadGeminiConfig } from "@recoveros/ai";
 import { RazorpayConfigError, RazorpayError, assertTestMode, redact } from "@recoveros/payments";
 
 /** Configuration presence/shape status (never reveals the value). */
 export type ConfigStatus = "OK" | "MISSING" | "MISCONFIGURED" | "REJECTED_LIVE";
-/** Live connectivity status. UNREACHABLE = external/network, distinct from FAILED (code). */
-export type ProbeStatus = "OK" | "SKIPPED" | "UNREACHABLE" | "FAILED";
+/**
+ * Live connectivity status.
+ *  - UNREACHABLE  = external/network/provider (timeout, transport, 5xx) — not a bug.
+ *  - RATE_LIMITED = provider quota / rate limit (HTTP 429) — transient, not a bug.
+ *  - FAILED       = a code/credential/output problem (auth 401/403, malformed output).
+ */
+export type ProbeStatus = "OK" | "SKIPPED" | "UNREACHABLE" | "RATE_LIMITED" | "FAILED";
 
 export interface GeminiSection {
   config: ConfigStatus;
@@ -103,10 +108,15 @@ export function checkWebhookSecret(env: Env): WebhookSection {
 // --- Connectivity probes (injected; classify external vs code failures) ----
 
 /**
- * Run an injected Gemini call and classify the outcome. Config errors → SKIPPED;
- * transport/timeout/http → UNREACHABLE (external); malformed output → FAILED
- * (code/output defect). The injected function is the ONLY thing that touches the
- * network/key, so this stays test-safe.
+ * Run an injected Gemini call and classify the outcome, preserving a useful
+ * distinction between failure kinds:
+ *   - config error                → SKIPPED (key/model not configured)
+ *   - HTTP 429                     → RATE_LIMITED (provider quota/rate limit; transient)
+ *   - HTTP 401/403                → FAILED (authentication — a real credential problem)
+ *   - transport/timeout/other http → UNREACHABLE (external, not a code bug)
+ *   - malformed output            → FAILED (code/output defect)
+ * The injected function is the ONLY thing that touches the network/key, so this
+ * stays test-safe.
  */
 export async function probeGemini(run: () => Promise<unknown>): Promise<{ status: ProbeStatus; detail?: string }> {
   try {
@@ -114,6 +124,12 @@ export async function probeGemini(run: () => Promise<unknown>): Promise<{ status
     return { status: "OK" };
   } catch (err) {
     if (err instanceof GeminiConfigError) return { status: "SKIPPED", detail: "config" };
+    if (err instanceof GeminiRequestError && err.status === 429) {
+      return { status: "RATE_LIMITED", detail: "rate_limit" };
+    }
+    if (err instanceof GeminiRequestError && (err.status === 401 || err.status === 403)) {
+      return { status: "FAILED", detail: "auth" };
+    }
     if (err instanceof GeminiError) {
       const external = err.category === "network" || err.category === "timeout" || err.category === "http";
       return { status: external ? "UNREACHABLE" : "FAILED", detail: err.category };

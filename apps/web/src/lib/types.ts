@@ -229,7 +229,7 @@ export interface FunnelDTO {
 }
 
 export type ConfigStatus = "OK" | "MISSING" | "MISCONFIGURED" | "REJECTED_LIVE";
-export type ProbeStatus = "OK" | "SKIPPED" | "UNREACHABLE" | "FAILED";
+export type ProbeStatus = "OK" | "SKIPPED" | "UNREACHABLE" | "RATE_LIMITED" | "FAILED";
 
 export interface IntegrationStatusDTO {
   mode: string;

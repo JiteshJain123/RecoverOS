@@ -113,6 +113,21 @@ test("Gemini probe: timeout/transport → UNREACHABLE (external, not a code bug)
   assert.equal((await probeGemini(async () => { throw new GeminiRequestError("boom"); })).status, "UNREACHABLE");
 });
 
+test("Gemini probe: quota/rate limit (HTTP 429) → RATE_LIMITED (transient, not UNREACHABLE)", async () => {
+  const r = await probeGemini(async () => { throw new GeminiRequestError("quota", 429); });
+  assert.equal(r.status, "RATE_LIMITED");
+  assert.equal(r.detail, "rate_limit");
+});
+
+test("Gemini probe: authentication (HTTP 401/403) → FAILED (credential problem)", async () => {
+  assert.equal((await probeGemini(async () => { throw new GeminiRequestError("unauth", 401); })).status, "FAILED");
+  assert.equal((await probeGemini(async () => { throw new GeminiRequestError("forbidden", 403); })).status, "FAILED");
+});
+
+test("Gemini probe: server error (HTTP 5xx) → UNREACHABLE (external)", async () => {
+  assert.equal((await probeGemini(async () => { throw new GeminiRequestError("server", 503); })).status, "UNREACHABLE");
+});
+
 test("Gemini probe: malformed output → FAILED (code/output defect)", async () => {
   assert.equal((await probeGemini(async () => { throw new GeminiMalformedOutputError("bad"); })).status, "FAILED");
 });
