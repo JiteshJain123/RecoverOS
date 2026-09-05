@@ -383,28 +383,40 @@ These are explicit boundaries, not defects:
 
 ## 20. Repository structure
 
+RecoverOS is a **pnpm workspace monorepo** with a clean **frontend / backend** split. If you only remember one thing:
+
+| Layer | Lives in | What it is |
+|-------|----------|------------|
+| 🖥️ **Frontend** | `apps/web` | Next.js Control Room UI + a same-origin BFF (`/api/recoveros/*`) that injects tenant context server-side |
+| ⚙️ **Backend (service)** | `apps/api` | Express API (`/api/v1/intelligence/*` + dev-only endpoints) |
+| 🧠 **Backend (domain logic)** | `packages/*` | Pure, independently-tested business logic consumed by the API (intelligence, strategy, AI, policy, payments, execution, webhooks, lifecycle, …) |
+| 🗄️ **Backend (data & tooling)** | `prisma/`, `simulator/`, `scripts/` | Database schema/seed, synthetic data generator, operational scripts |
+| 📄 **Shared / docs** | `packages/shared`, `packages/config`, `docs/` | Cross-cutting types, env config, and design documentation |
+
+> Why not literal `frontend/` and `backend/` folders? `apps/*` + `packages/*` is the standard pnpm/monorepo convention, and the separation above is exact: everything a browser runs is in `apps/web`; everything else is backend/domain. Renaming would rewrite workspace, TypeScript, Prisma, and test wiring for no functional gain.
+
 ```
 apps/
-  web/          Next.js Control Room UI + same-origin BFF (/api/recoveros/*)
-  api/          Express API: /api/v1/intelligence/* + dev-only endpoints
-packages/
-  shared/       Cross-cutting types
-  config/        Validated environment configuration (zod)
-  observability/ Structured logging
-  database/     Prisma client boundary (schema at prisma/)
-  intelligence/ Failure classification, scoring, revenue-at-risk detection + read model
-  strategy/     Deterministic recovery strategy + schema-validated plans
-  ai/           Google Gemini client, prompt, structured output, provider (advisory)
-  policy/       Deterministic ALLOW/REVIEW/BLOCK engine (fails closed)
-  payments/     Razorpay Test Mode adapter + gateway operations
-  execution/    Bounded action executor, approvals, safeguards, simulator
-  webhooks/     HMAC verification, idempotency, reconciliation
-  lifecycle/    End-to-end lifecycle, batch evaluation, safety report, Failure Lab
-  evaluation/   Offline metrics package (interface stub — see Limitations)
-prisma/         Prisma schema, migrations, deterministic seed
-simulator/      Synthetic dataset generator
-scripts/        Operational/dev scripts
-docs/           Architecture and integration documentation
+  web/          🖥️ FRONTEND — Next.js Control Room UI + same-origin BFF (/api/recoveros/*)
+  api/          ⚙️ BACKEND  — Express API: /api/v1/intelligence/* + dev-only endpoints
+packages/       🧠 BACKEND domain logic (+ shared)
+  shared/         Cross-cutting types            (also used by the frontend)
+  config/         Validated environment configuration (zod)
+  observability/  Structured logging
+  database/       Prisma client boundary (schema at prisma/)
+  intelligence/   Failure classification, scoring, revenue-at-risk detection + read model
+  strategy/       Deterministic recovery strategy + schema-validated plans
+  ai/             Google Gemini client, prompt, structured output, provider (advisory)
+  policy/         Deterministic ALLOW/REVIEW/BLOCK engine (fails closed)
+  payments/       Razorpay Test Mode adapter + gateway operations
+  execution/      Bounded action executor, approvals, safeguards, simulator
+  webhooks/       HMAC verification, idempotency, reconciliation
+  lifecycle/      End-to-end lifecycle, batch evaluation, safety report, Failure Lab
+  evaluation/     Offline metrics package (interface stub — see Limitations)
+prisma/         🗄️ BACKEND — Prisma schema, migrations, deterministic seed
+simulator/      🗄️ BACKEND — Synthetic dataset generator
+scripts/        🗄️ BACKEND — Operational/dev scripts
+docs/           📄 Architecture and integration documentation
 ```
 
 Deeper design docs live in [`docs/`](docs/): `ARCHITECTURE.md`, `GEMINI.md`, `RAZORPAY_INTEGRATION.md`, `POLICY_EXECUTION.md`, `WEBHOOKS.md`, `STRATEGY.md`, `API.md`.
