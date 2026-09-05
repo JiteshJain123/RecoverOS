@@ -4,11 +4,13 @@
 
 **Detect revenue at risk → let Gemini recommend a bounded recovery strategy → enforce deterministic financial policy → execute only permitted actions → verify the outcome through authenticated payment events → credit recovered revenue *only when recovery is proven*.**
 
-![Track](https://img.shields.io/badge/Buildathon-Track%2003%20%E2%80%94%20AI%20Revenue%20Recovery-4f46e5)
-![Razorpay](https://img.shields.io/badge/Razorpay-Test%20Mode%20only-0b4a2e)
-![Tests](https://img.shields.io/badge/tests-310%20passing-067647)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
-![AI](https://img.shields.io/badge/AI-Google%20Gemini-175cd3)
+<p>
+  <img alt="Buildathon — Track 03 — AI Revenue Recovery" src="https://img.shields.io/badge/Buildathon-Track%2003%20%E2%80%94%20AI%20Revenue%20Recovery-4f46e5" />
+  <img alt="Razorpay — Test Mode only" src="https://img.shields.io/badge/Razorpay-Test%20Mode%20only-0b4a2e" />
+  <img alt="tests — 310 passing" src="https://img.shields.io/badge/tests-310%20passing-067647" />
+  <img alt="TypeScript — strict" src="https://img.shields.io/badge/TypeScript-strict-3178c6" />
+  <img alt="AI — Google Gemini" src="https://img.shields.io/badge/AI-Google%20Gemini-175cd3" />
+</p>
 
 > **Track 03 — AI Revenue Recovery.**
 > **No real money is moved.** Razorpay runs in **Test Mode only** (`rzp_live_*` keys are rejected in code), execution can run against a deterministic **simulator**, and the demo dataset is **synthetic/seeded**. RecoverOS is a control plane that *decides and verifies*; it never processes live funds in this submission.
