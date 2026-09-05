@@ -1,0 +1,562 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../packages/database/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  status            TenantStatus       @default(ACTIVE)
+  razorpayKeyId     String?
+  secretsRef        String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  agentRuns         AgentRun[]
+  auditLogs         AuditLog[]
+  customers         Customer[]
+  evaluationRuns    EvaluationRun[]
+  memberships       Membership[]
+  paymentEvents     PaymentEvent[]
+  payments          Payment[]
+  policies          Policy[]
+  recoveryActions   RecoveryAction[]
+  recoveryCases     RecoveryCase[]
+  recoveryDecisions RecoveryDecision[]
+  webhookEvents     WebhookEvent[]
+
+  @@map("tenants")
+}
+
+/// Global user identity. Authentication is NOT implemented in Phase 1 — no
+/// credential fields yet. Tenant access is granted via Membership.
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  memberships     Membership[]
+  approvedActions RecoveryAction[] @relation("ActionApprover")
+
+  @@map("users")
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      Role             @default(VIEWER)
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("memberships")
+}
+
+model Customer {
+  id                 String         @id @default(cuid())
+  tenantId           String
+  razorpayCustomerId String?
+  email              String?
+  phone              String?
+  name               String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  tenant             Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments           Payment[]
+  recoveryCases      RecoveryCase[]
+
+  @@unique([tenantId, razorpayCustomerId])
+  @@index([tenantId])
+  @@index([tenantId, email])
+  @@map("customers")
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  tenantId          String
+  customerId        String?
+  razorpayPaymentId String?
+  razorpayOrderId   String?
+  status            PaymentStatus  @default(CREATED)
+  method            String?
+  amountMinor       Int
+  currency          String         @default("INR")
+  failureCode       String?
+  failureReason     String?
+  capturedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  paymentEvents     PaymentEvent[]
+  customer          Customer?      @relation(fields: [customerId], references: [id])
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recoveryCases     RecoveryCase[]
+
+  @@unique([tenantId, razorpayPaymentId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, razorpayOrderId])
+  @@index([customerId])
+  @@map("payments")
+}
+
+/// Append-only: normalized payment lifecycle events (createdAt only).
+model PaymentEvent {
+  id                   String           @id @default(cuid())
+  tenantId             String
+  paymentId            String?
+  type                 PaymentEventType
+  rawType              String
+  payload              Json
+  /// Provenance: the inbound webhook this event was derived from, if any.
+  sourceWebhookEventId String?
+  occurredAt           DateTime
+  createdAt            DateTime         @default(now())
+  payment              Payment?         @relation(fields: [paymentId], references: [id])
+  sourceWebhookEvent   WebhookEvent?    @relation(fields: [sourceWebhookEventId], references: [id])
+  tenant               Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, paymentId])
+  @@index([tenantId, type])
+  @@map("payment_events")
+}
+
+model RecoveryCase {
+  id                   String             @id @default(cuid())
+  tenantId             String
+  paymentId            String?
+  customerId           String?
+  reason               RecoveryReason
+  status               RecoveryCaseStatus @default(DETECTED)
+  amountAtRiskMinor    Int
+  currency             String             @default("INR")
+  openedAt             DateTime           @default(now())
+  resolvedAt           DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  /// Version of the detection/scoring ruleset that last touched this case.
+  detectionRuleVersion String?
+  /// When the intelligence engine last detected risk for this case.
+  lastDetectedAt       DateTime?
+  /// The weighted components that produced `priorityScore`, so the dashboard
+  /// can answer "why is this case high priority?". Shape: PriorityScore JSON.
+  priorityComponents   Json?
+  /// Explainable priority score in [0, 100] (see priorityComponents).
+  priorityScore        Int?
+  /// Snapshot of the risk signals that opened/updated this case (evidence).
+  riskSignals          Json?
+  /// Controlled root-cause classification for the underlying failure/event.
+  rootCause            RootCause?
+  /// Severity of the case's primary risk signal (indexed for dashboard filters).
+  severity             Severity?
+  agentRuns            AgentRun[]
+  actions              RecoveryAction[]
+  customer             Customer?          @relation(fields: [customerId], references: [id])
+  payment              Payment?           @relation(fields: [paymentId], references: [id])
+  tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  decisions            RecoveryDecision[]
+
+  @@unique([tenantId, paymentId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, reason])
+  @@index([tenantId, priorityScore])
+  @@index([tenantId, severity])
+  @@index([tenantId, rootCause])
+  @@index([tenantId, openedAt])
+  @@map("recovery_cases")
+}
+
+/// The AI agent's structured PROPOSAL for a case. Carries no authority — it is
+/// handed to the deterministic policy engine, which authorizes via a
+/// RecoveryAction. (docs/ARCHITECTURE.md §7)
+model RecoveryDecision {
+  id             String             @id @default(cuid())
+  tenantId       String
+  caseId         String
+  agentRunId     String?            @unique
+  proposedAction RecoveryActionType
+  amountMinor    Int?
+  confidence     Float
+  diagnosis      String
+  rationale      String
+  createdAt      DateTime           @default(now())
+  actions        RecoveryAction[]
+  agentRun       AgentRun?          @relation(fields: [agentRunId], references: [id])
+  case           RecoveryCase       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([caseId])
+  @@map("recovery_decisions")
+}
+
+/// An authorized/executed recovery action. This is where the policy engine's
+/// deterministic decision is recorded and where financial execution state
+/// lives. Idempotency key prevents double execution.
+model RecoveryAction {
+  id                String               @id @default(cuid())
+  tenantId          String
+  caseId            String
+  decisionId        String?
+  policyId          String?
+  type              RecoveryActionType
+  status            RecoveryActionStatus @default(PROPOSED)
+  amountMinor       Int?
+  currency          String               @default("INR")
+  policyDecision    PolicyDecision?
+  policyReasons     Json?
+  policyVersion     Int?
+  /// Idempotency key — guarantees a financial action executes at most once.
+  idempotencyKey    String
+  /// External provider reference (e.g. Razorpay payment link id) once created.
+  externalReference String?
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  executedAt        DateTime?
+  completedAt       DateTime?
+  failureReason     String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  approver          User?                @relation("ActionApprover", fields: [approvedByUserId], references: [id])
+  case              RecoveryCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  decision          RecoveryDecision?    @relation(fields: [decisionId], references: [id])
+  policy            Policy?              @relation(fields: [policyId], references: [id])
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([caseId])
+  @@map("recovery_actions")
+}
+
+model Policy {
+  id            String           @id @default(cuid())
+  tenantId      String
+  version       Int
+  name          String?
+  isActive      Boolean          @default(false)
+  /// Deterministic guardrail configuration (amount ceilings, retry limits,
+  /// cooldowns, contact caps, allowed action types, rolling caps). Structured
+  /// JSON now; may be normalized into columns later.
+  limits        Json
+  effectiveFrom DateTime         @default(now())
+  effectiveTo   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actions       RecoveryAction[]
+
+  @@unique([tenantId, version])
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@map("policies")
+}
+
+model AgentRun {
+  id           String            @id @default(cuid())
+  tenantId     String
+  caseId       String
+  status       AgentRunStatus    @default(PENDING)
+  model        String?
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int?
+  error        String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  case         RecoveryCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  toolCalls    AgentToolCall[]
+  decision     RecoveryDecision?
+
+  @@index([tenantId])
+  @@index([caseId])
+  @@map("agent_runs")
+}
+
+/// Append-only: individual tool invocations within an agent run (createdAt only).
+model AgentToolCall {
+  id         String   @id @default(cuid())
+  tenantId   String
+  agentRunId String
+  sequence   Int
+  name       String
+  args       Json
+  result     Json?
+  isError    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+
+  @@unique([agentRunId, sequence])
+  @@index([agentRunId])
+  @@index([tenantId])
+  @@map("agent_tool_calls")
+}
+
+/// Inbound provider webhooks. `@@unique([tenantId, providerEventId])` provides
+/// idempotency: a re-delivered event is recognized and not reprocessed.
+model WebhookEvent {
+  id              String             @id @default(cuid())
+  tenantId        String
+  provider        WebhookProvider    @default(RAZORPAY)
+  providerEventId String
+  eventType       String
+  signatureValid  Boolean            @default(false)
+  status          WebhookEventStatus @default(RECEIVED)
+  payload         Json
+  receivedAt      DateTime           @default(now())
+  processedAt     DateTime?
+  error           String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  paymentEvents   PaymentEvent[]
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, providerEventId])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("webhook_events")
+}
+
+/// Append-only audit trail (createdAt only, no updates). `tenantId` is nullable
+/// to allow system-level events not tied to a tenant.
+model AuditLog {
+  id          String         @id @default(cuid())
+  tenantId    String?
+  actorType   AuditActorType
+  actorUserId String?
+  action      String
+  entityType  String?
+  entityId    String?
+  summary     String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  tenant      Tenant?        @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+/// Evaluation runs operate on SYNTHETIC datasets and hold NO foreign keys into
+/// Payment/Customer/RecoveryCase (requirement 8). `tenantId` is nullable so
+/// evaluations can be system-level.
+model EvaluationRun {
+  id          String             @id @default(cuid())
+  tenantId    String?
+  kind        EvaluationKind
+  datasetName String
+  status      EvaluationStatus   @default(PENDING)
+  config      Json?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  results     EvaluationResult[]
+  tenant      Tenant?            @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("evaluation_runs")
+}
+
+model EvaluationResult {
+  id                    String        @id @default(cuid())
+  evaluationRunId       String
+  segment               String        @default("all")
+  precision             Float
+  recall                Float
+  falsePositiveCost     Float
+  recoveryRate          Float
+  recoveredRevenueMinor BigInt
+  casesTotal            Int
+  casesActedOn          Int
+  casesRecovered        Int
+  /// Optional per-case breakdown for drill-down (synthetic ids only).
+  perCase               Json?
+  createdAt             DateTime      @default(now())
+  run                   EvaluationRun @relation(fields: [evaluationRunId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationRunId, segment])
+  @@index([evaluationRunId])
+  @@map("evaluation_results")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  APPROVER
+  ANALYST
+  VIEWER
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+/// Normalized payment lifecycle event categories (the raw provider event name
+/// is preserved separately in PaymentEvent.rawType).
+enum PaymentEventType {
+  PAYMENT_CREATED
+  PAYMENT_AUTHORIZED
+  PAYMENT_CAPTURED
+  PAYMENT_FAILED
+  REFUND_CREATED
+  PAYMENT_LINK_CREATED
+  PAYMENT_LINK_PAID
+  PAYMENT_LINK_EXPIRED
+  SUBSCRIPTION_CHARGED
+  SUBSCRIPTION_FAILED
+  OTHER
+}
+
+/// Why a recovery case was opened (the source of at-risk revenue).
+enum RecoveryReason {
+  FAILED_PAYMENT
+  ABANDONED_CHECKOUT
+  SUBSCRIPTION_FAILURE
+}
+
+/// Deterministic root-cause taxonomy produced by the Phase 2 payment-
+/// intelligence classifier (NOT by an LLM). A small controlled vocabulary that
+/// every raw provider failure/event is mapped into. See packages/intelligence.
+enum RootCause {
+  BANK_DECLINE
+  INSUFFICIENT_FUNDS
+  TIMEOUT
+  GATEWAY_ERROR
+  CUSTOMER_ABANDONMENT
+  EXPIRED_CHECKOUT
+  UNKNOWN
+}
+
+/// Ordinal severity of a recovery case's primary risk signal (Phase 2 engine).
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Case lifecycle — mirrors docs/ARCHITECTURE.md §11.
+enum RecoveryCaseStatus {
+  DETECTED
+  ANALYZING
+  PROPOSED
+  PENDING_APPROVAL
+  AUTHORIZED
+  EXECUTING
+  RECOVERED
+  FAILED
+  BLOCKED
+  REJECTED
+  EXPIRED
+}
+
+/// Bounded set of recovery action types the agent may propose.
+enum RecoveryActionType {
+  RETRY_PAYMENT
+  SEND_PAYMENT_LINK
+  CONTACT_CUSTOMER
+  NO_ACTION
+}
+
+/// Deterministic action state machine (see docs/ARCHITECTURE.md §8, §11):
+/// PROPOSED -> AWAITING_APPROVAL | AUTHORIZED | BLOCKED | REJECTED
+/// AWAITING_APPROVAL -> AUTHORIZED | REJECTED
+/// AUTHORIZED -> EXECUTING
+/// EXECUTING -> SUCCEEDED | FAILED
+/// (PROPOSED|AWAITING_APPROVAL|AUTHORIZED) -> CANCELLED | EXPIRED
+enum RecoveryActionStatus {
+  PROPOSED
+  AWAITING_APPROVAL
+  AUTHORIZED
+  BLOCKED
+  REJECTED
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+/// Deterministic policy-engine decision (never produced by the LLM).
+enum PolicyDecision {
+  ALLOW
+  REVIEW
+  BLOCK
+}
+
+enum AgentRunStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  TIMEOUT
+  INVALID_OUTPUT
+  FALLBACK
+}
+
+enum WebhookProvider {
+  RAZORPAY
+}
+
+enum WebhookEventStatus {
+  RECEIVED
+  VERIFIED
+  PROCESSED
+  INVALID_SIGNATURE
+  DUPLICATE
+  FAILED
+}
+
+enum AuditActorType {
+  SYSTEM
+  USER
+  AGENT
+  POLICY_ENGINE
+}
+
+enum EvaluationKind {
+  BASELINE
+  AI_ASSISTED
+}
+
+enum EvaluationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
