@@ -42,7 +42,7 @@ function env(over: Partial<Env> = {}): Env {
     WEB_PORT: 3000,
     DATABASE_URL: undefined,
     GEMINI_API_KEY: "gk_test_key",
-    GEMINI_MODEL: "gemini-3.5-flash",
+    GEMINI_MODEL: "gemini-3.8-flash",
     RAZORPAY_KEY_ID: "rzp_test_abc123",
     RAZORPAY_KEY_SECRET: FAKE_SECRET,
     RAZORPAY_WEBHOOK_SECRET: FAKE_WEBHOOK_SECRET,
@@ -59,13 +59,13 @@ function env(over: Partial<Env> = {}): Env {
 test("missing Gemini key → MISSING (still reports the default model)", () => {
   const r = checkGeminiConfig(env({ GEMINI_API_KEY: "" }));
   assert.equal(r.config, "MISSING");
-  assert.equal(r.model, "gemini-3.5-flash");
+  assert.equal(r.model, "gemini-3.8-flash");
 });
 
-test("valid Gemini configuration → OK and model defaults to gemini-3.5-flash", () => {
+test("valid Gemini configuration → OK and model defaults to gemini-3.8-flash", () => {
   const r = checkGeminiConfig(env());
   assert.equal(r.config, "OK");
-  assert.equal(r.model, "gemini-3.5-flash");
+  assert.equal(r.model, "gemini-3.8-flash");
 });
 
 // --- Razorpay configuration -------------------------------------------------
@@ -181,12 +181,12 @@ test("report distinguishes UNREACHABLE (external) from a config failure", async 
 
 test("formatReport emits the expected classified lines and nothing else", () => {
   const lines = formatReport({
-    gemini: { config: "OK", model: "gemini-3.5-flash", connectivity: "OK" },
+    gemini: { config: "OK", model: "gemini-3.8-flash", connectivity: "OK" },
     razorpay: { config: "OK", mode: "TEST", connectivity: "OK" },
     webhook: { config: "OK" },
   });
   assert.ok(lines.includes("Gemini configuration: OK"));
-  assert.ok(lines.includes("Gemini model: gemini-3.5-flash"));
+  assert.ok(lines.includes("Gemini model: gemini-3.8-flash"));
   assert.ok(lines.includes("Gemini connectivity: OK"));
   assert.ok(lines.includes("Razorpay configuration: OK"));
   assert.ok(lines.includes("Razorpay mode: TEST"));

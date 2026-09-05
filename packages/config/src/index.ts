@@ -21,9 +21,9 @@ const EnvSchema = z.object({
   // Consumed in later phases — optional for now.
   DATABASE_URL: z.string().url().optional(),
 
-  // Google Gemini is the AI provider (integration not implemented yet).
+  // Google Gemini is the AI provider (advisory recovery recommendations).
   GEMINI_API_KEY: z.string().optional(),
-  GEMINI_MODEL: z.string().default("gemini-3.5-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.8-flash"),
 
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),

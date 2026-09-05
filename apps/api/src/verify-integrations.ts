@@ -26,7 +26,7 @@ export type ProbeStatus = "OK" | "SKIPPED" | "UNREACHABLE" | "RATE_LIMITED" | "F
 
 export interface GeminiSection {
   config: ConfigStatus;
-  /** Non-secret model id (from GEMINI_MODEL); defaults to gemini-3.5-flash. */
+  /** Non-secret model id (from GEMINI_MODEL); defaults to gemini-3.8-flash. */
   model: string | null;
   connectivity: ProbeStatus;
   detail?: string;
@@ -63,7 +63,7 @@ export interface ReportVerdict {
  * Gemini config: the key is read server-side only via {@link loadGeminiConfig}
  * (which throws {@link GeminiConfigError} when GEMINI_API_KEY is blank). The
  * model is reported from GEMINI_MODEL, which the schema defaults to
- * `gemini-3.5-flash`.
+ * `gemini-3.8-flash`.
  */
 export function checkGeminiConfig(env: Env): { config: ConfigStatus; model: string | null } {
   const model = (env.GEMINI_MODEL ?? "").trim() || null;

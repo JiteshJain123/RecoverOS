@@ -31,7 +31,7 @@ export const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
 export interface GeminiConfig {
   /** Secret API key. Kept in memory only; never logged/serialized. */
   readonly apiKey: string;
-  /** Model id from GEMINI_MODEL (e.g. "gemini-3.5-flash"). */
+  /** Model id from GEMINI_MODEL (e.g. "gemini-3.8-flash"). */
   readonly model: string;
   readonly timeoutMs: number;
   readonly temperature: number;

@@ -82,7 +82,7 @@ export default function IntegrationPage() {
 
       <Card title="Configuration guidance (safe)">
         <ul className="muted" style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
-          <li>Set <span className="mono">GEMINI_API_KEY</span> and <span className="mono">GEMINI_MODEL</span> (e.g. <span className="mono">gemini-3.6-flash</span>) in your server <span className="mono">.env</span>.</li>
+          <li>Set <span className="mono">GEMINI_API_KEY</span> and <span className="mono">GEMINI_MODEL</span> (e.g. <span className="mono">gemini-3.8-flash</span>) in your server <span className="mono">.env</span>.</li>
           <li>Set <span className="mono">RAZORPAY_KEY_ID</span> (<span className="mono">rzp_test_*</span>) and <span className="mono">RAZORPAY_KEY_SECRET</span>.</li>
           <li>Set <span className="mono">RAZORPAY_WEBHOOK_SECRET</span> for signature verification.</li>
           <li>Never prefix a secret with <span className="mono">NEXT_PUBLIC_</span> — that would expose it to the browser.</li>

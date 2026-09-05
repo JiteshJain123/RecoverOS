@@ -4,7 +4,7 @@
 
 **Detect revenue at risk → let Gemini recommend a bounded recovery strategy → enforce deterministic financial policy → execute only permitted actions → verify the outcome through authenticated payment events → credit recovered revenue *only when recovery is proven*.**
 
-🟣 **Buildathon · Track 03 — AI Revenue Recovery** &nbsp; 🟢 **Razorpay · Test Mode only** &nbsp; ✅ **tests · 310 passing** &nbsp; 🔷 **TypeScript · strict** &nbsp; ✨ **AI · Google Gemini**
+🟣 **Buildathon · Track 03 — AI Revenue Recovery** &nbsp; 🟢 **Razorpay · Test Mode only** &nbsp; ✅ **tests · 313 passing** &nbsp; 🔷 **TypeScript · strict** &nbsp; ✨ **AI · Google Gemini**
 
 > **Track 03 — AI Revenue Recovery.**
 > **No real money is moved.** Razorpay runs in **Test Mode only** (`rzp_live_*` keys are rejected in code), execution can run against a deterministic **simulator**, and the demo dataset is **synthetic/seeded**. RecoverOS is a control plane that *decides and verifies*; it never processes live funds in this submission.
@@ -212,7 +212,7 @@ A **deterministic evaluation** runs the whole seeded dataset through the connect
 
 | Check | Result |
 |-------|--------|
-| Automated tests (`node:test`) | **310 passing / 0 failing** |
+| Automated tests (`node:test`) | **313 passing / 0 failing** |
 | Typecheck (`tsc`) | **PASS** |
 | Lint (ESLint) | **PASS** |
 | Production build (`next build`) | **PASS** (12/12 pages) |
@@ -252,7 +252,7 @@ DEMO / SIMULATED-TEST indicators are always visible so it can never look like li
 | Frontend | Next.js 15 (App Router) + React 19 (`apps/web`) |
 | Backend | Express 4 + TypeScript (`apps/api`) |
 | Database | PostgreSQL + Prisma 6 (`prisma/`, `packages/database`) |
-| AI | **Google Gemini** via REST `generativelanguage v1beta` (`packages/ai`) |
+| AI | **Google Gemini** (default `gemini-3.8-flash`) via REST `generativelanguage v1beta` (`packages/ai`) |
 | Payments | Razorpay **Test Mode** adapter (`packages/payments`) |
 | Validation | zod |
 | Tests | `node:test` + `tsx` |
@@ -289,13 +289,13 @@ pnpm dev:web          # Control Room → http://localhost:3000
 **Quality gates:**
 
 ```bash
-pnpm test        # node:test suite (310 tests)
+pnpm test        # node:test suite (313 tests)
 pnpm typecheck   # tsc --noEmit across the workspace
 pnpm lint        # eslint
 pnpm build       # typecheck + next build
 ```
 
-To enable live Gemini recommendations, set `GEMINI_API_KEY` (Google AI Studio) and `GEMINI_MODEL`. To enable the real Razorpay **Test Mode** adapter, set `RAZORPAY_KEY_ID` (`rzp_test_*`), `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET`. With these unset, RecoverOS falls back to the deterministic simulator — never a live call.
+To enable live Gemini recommendations, set `GEMINI_API_KEY` (Google AI Studio) and `GEMINI_MODEL` (e.g. `gemini-3.8-flash`). To enable the real Razorpay **Test Mode** adapter, set `RAZORPAY_KEY_ID` (`rzp_test_*`), `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET`. With these unset, RecoverOS falls back to the deterministic simulator — never a live call.
 
 ---
 
@@ -310,7 +310,7 @@ Defined in `.env.example` (placeholders only):
 | `API_PORT` / `WEB_PORT` | API (4000) and web (3000) ports. |
 | `DATABASE_URL` | PostgreSQL connection string (local placeholder in the example). |
 | `GEMINI_API_KEY` | Google Gemini key. Blank ⇒ recommendations disabled (endpoint returns a safe 503). |
-| `GEMINI_MODEL` | Gemini model id, e.g. `gemini-3.6-flash` (model is read from env, never hardcoded). |
+| `GEMINI_MODEL` | Gemini model id, e.g. `gemini-3.8-flash` (model is read from env, never hardcoded). |
 | `RAZORPAY_KEY_ID` | Razorpay **Test Mode** key id (`rzp_test_*`; `rzp_live_*` is rejected). |
 | `RAZORPAY_KEY_SECRET` | Razorpay Test Mode secret. |
 | `RAZORPAY_WEBHOOK_SECRET` | HMAC secret for webhook signature verification. |
@@ -428,7 +428,7 @@ Deeper design docs live in [`docs/`](docs/): `ARCHITECTURE.md`, `GEMINI.md`, `RA
 Latest local run of the full pipeline:
 
 ```
-pnpm test        → 310 passing / 0 failing
+pnpm test        → 313 passing / 0 failing
 pnpm typecheck   → clean (0 errors)
 pnpm lint        → clean (0 warnings/errors)
 pnpm build       → compiled successfully (12/12 pages)
