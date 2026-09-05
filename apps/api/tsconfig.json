@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@recoveros/shared": ["../../packages/shared/src/index.ts"],
+      "@recoveros/config": ["../../packages/config/src/index.ts"],
+      "@recoveros/observability": ["../../packages/observability/src/index.ts"],
+      "@recoveros/intelligence": ["../../packages/intelligence/src/index.ts"],
+      "@recoveros/strategy": ["../../packages/strategy/src/index.ts"],
+      "@recoveros/ai": ["../../packages/ai/src/index.ts"],
+      "@recoveros/policy": ["../../packages/policy/src/index.ts"],
+      "@recoveros/execution": ["../../packages/execution/src/index.ts"],
+      "@recoveros/payments": ["../../packages/payments/src/index.ts"],
+      "@recoveros/webhooks": ["../../packages/webhooks/src/index.ts"],
+      "@recoveros/lifecycle": ["../../packages/lifecycle/src/index.ts"],
+      "@recoveros/database": ["../../packages/database/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
