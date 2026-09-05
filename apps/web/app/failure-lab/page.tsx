@@ -110,8 +110,11 @@ export default function FailureLabPage() {
                 <button
                   className="btn btn--primary"
                   type="button"
-                  disabled={busy || !selected}
-                  onClick={() => selected && runScenario(selected)}
+                  disabled={busy || (scenarios.data?.scenarios?.length ?? 0) === 0}
+                  onClick={() => {
+                    const id = selected ?? scenarios.data?.scenarios?.[0]?.id;
+                    if (id) runScenario(id);
+                  }}
                 >
                   {busy ? "Running…" : "▶ Run in Test / Simulation Environment"}
                 </button>
