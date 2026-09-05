@@ -879,6 +879,35 @@ async function reportCounts(): Promise<void> {
 // Entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * Tenant-agnostic development approval actor. The web BFF injects
+ * `x-user-id: "dev-operator"` for dev approvals, and `RecoveryAction.approvedByUserId`
+ * is a foreign key to `User` — so this row must exist for the Approve action to
+ * persist. Given an APPROVER membership in each seeded tenant so it is a valid
+ * approver everywhere. Never used for authentication; real auth replaces it later.
+ */
+async function seedDevOperator(): Promise<void> {
+  await prisma.user.create({
+    data: {
+      id: "dev-operator",
+      email: "dev-operator@recoveros.seed.test",
+      name: "Development Operator",
+      createdAt: ts(120),
+      updatedAt: ts(1),
+      memberships: {
+        create: TENANTS.map((t) => ({
+          id: `seed_membership_${t.index}_devop`,
+          tenantId: t.id,
+          role: "APPROVER",
+          status: "ACTIVE",
+          createdAt: ts(120),
+          updatedAt: ts(1),
+        })),
+      },
+    },
+  });
+}
+
 async function main(): Promise<void> {
   console.log("[seed] Resetting local development database (synthetic data only)...");
   await resetDatabase();
@@ -886,6 +915,7 @@ async function main(): Promise<void> {
     console.log(`[seed] Seeding tenant "${t.name}" (${t.slug})...`);
     await seedTenant(t);
   }
+  await seedDevOperator();
   await reportCounts();
   console.log("[seed] Done.");
 }
