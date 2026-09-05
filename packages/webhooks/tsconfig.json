@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@recoveros/config": ["../config/src/index.ts"],
+      "@recoveros/observability": ["../observability/src/index.ts"],
+      "@recoveros/database": ["../database/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
