@@ -142,8 +142,8 @@ A representative case, and the distinctions RecoverOS keeps rigorously separate:
 | **Revenue at risk** | A failed/abandoned payment detected and quantified | ❌ |
 | **Recovery candidate** | Intelligence says a safe intervention may exist | ❌ |
 | **Policy-approved** | Deterministic policy returned ALLOW (or a REVIEW was approved) | ❌ |
-| **Attempted recovery** | A bounded action executed (e.g. a payment link was created) | ❌ |
-| **Verified recovery** | A signature-verified capture was reconciled to the case | ✅ |
+| **Attempted recovery** | A bounded recovery action executed (e.g. a payment link was created) | ❌ |
+| **Verified recovery** | A verified successful capture was reconciled to the case | ✅ |
 
 Example: a ₹5,000 card payment fails (BANK_DECLINE). Intelligence flags it as a candidate → Gemini recommends `SEND_PAYMENT_LINK` (confidence 0.85) → policy returns ALLOW → the execution service creates a **Test Mode** payment link (attempted, ₹0 recovered) → the customer pays → Razorpay emits a signed `payment.captured` webhook → it is verified, deduplicated, and reconciled → **now** ₹5,000 is credited as verified recovered revenue and the audit trail records every transition.
 
