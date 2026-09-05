@@ -314,7 +314,7 @@ Defined in `.env.example` (placeholders only):
 | `API_PORT` / `WEB_PORT` | API (4000) and web (3000) ports. |
 | `DATABASE_URL` | PostgreSQL connection string (local placeholder in the example). |
 | `GEMINI_API_KEY` | Google Gemini key. Blank ⇒ recommendations disabled (endpoint returns a safe 503). |
-| `GEMINI_MODEL` | Gemini model id, e.g. `gemini-3.5-flash` (model is read from env, never hardcoded). |
+| `GEMINI_MODEL` | Gemini model id, e.g. `gemini-3.6-flash` (model is read from env, never hardcoded). |
 | `RAZORPAY_KEY_ID` | Razorpay **Test Mode** key id (`rzp_test_*`; `rzp_live_*` is rejected). |
 | `RAZORPAY_KEY_SECRET` | Razorpay Test Mode secret. |
 | `RAZORPAY_WEBHOOK_SECRET` | HMAC secret for webhook signature verification. |
