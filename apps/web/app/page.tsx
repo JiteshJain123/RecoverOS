@@ -76,7 +76,10 @@ function OverviewMetrics({ summary: s }: { summary: IntelligenceSummaryDTO }) {
         <div className="kpi-panel kpi-panel--risk">
           <div className="kpi-panel__label">⚠ Revenue at Risk</div>
           <div className="kpi-panel__value">{formatMoney(s.revenueAtRiskMinor, s.money)}</div>
-          <div className="kpi-panel__sub">Detected failed &amp; abandoned payments that have not yet been recovered.</div>
+          <div className="kpi-panel__sub">
+            Open cases only — money still to recover. Excludes amounts already recovered, so this is not the denominator of the
+            recovery rate.
+          </div>
           <div className="kpi-panel__foot">
             <span className="muted">
               <b>{s.affectedPayments}</b> payments
@@ -92,7 +95,7 @@ function OverviewMetrics({ summary: s }: { summary: IntelligenceSummaryDTO }) {
           <div className="kpi-panel__sub">Credited only on a proven capture — never a payment link or an HTTP 200.</div>
           <div className="kpi-panel__foot">
             <span className="muted">
-              Verified recovery rate <b>{formatRate(s.recoverySuccessRate)}</b>
+              Recovery rate <b>{formatRate(s.recoverySuccessRate)}</b> · by resolved cases (recovered ÷ recovered + failed)
             </span>
           </div>
         </div>
@@ -104,7 +107,7 @@ function OverviewMetrics({ summary: s }: { summary: IntelligenceSummaryDTO }) {
           icon="↺"
           accent="info"
           value={formatRate(s.recoverySuccessRate)}
-          sub="Recovered ÷ (recovered + failed)"
+          sub="By resolved cases: recovered ÷ (recovered + failed)"
         />
         <MetricCard label="High-priority Cases" icon="▲" accent="warning" value={s.highPriorityCases} sub="Open, priority ≥ 70" />
         <MetricCard label="Awaiting Approval / Review" icon="⧖" accent="warning" value={s.reviewRequiredCases} sub="Held for a human decision" />
