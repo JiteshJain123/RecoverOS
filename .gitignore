@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Prisma generated client
+packages/database/generated/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test / coverage
+coverage/
+
+# Stray local screenshot
+/image.png

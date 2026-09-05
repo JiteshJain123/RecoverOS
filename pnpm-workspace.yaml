@@ -1,0 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "simulator"
+
+# Dependencies whose install/build scripts are allowed to run.
+# Prisma engine builds are enabled so `pnpm db:generate` works in Phase 1.
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  esbuild: true
+  prisma: true

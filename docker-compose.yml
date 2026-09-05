@@ -1,0 +1,25 @@
+# Local development infrastructure for RecoverOS.
+# Currently provides PostgreSQL only. Application services are run via pnpm
+# during development; they will be containerized in a later phase.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recoveros-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: recoveros
+      POSTGRES_PASSWORD: recoveros
+      POSTGRES_DB: recoveros
+    ports:
+      - "5432:5432"
+    volumes:
+      - recoveros-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recoveros -d recoveros"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  recoveros-pgdata:
