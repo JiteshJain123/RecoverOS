@@ -2,21 +2,23 @@
 
 > **Status of this document**
 >
-> This is a **design and architecture specification**, not a description of shipped
-> functionality. At the time of writing, **no application code exists** in this
-> repository — only tooling/harness configuration (`.claude/`). Every capability
-> described below is **PLANNED** unless explicitly marked `IMPLEMENTED`.
+> This began as a design specification and now documents the **implemented**
+> RecoverOS system. The end-to-end pipeline described below — payment-failure
+> intelligence, Gemini-backed recovery strategy, the deterministic policy engine,
+> bounded execution with safeguards, the Razorpay **Test Mode** adapter, HMAC
+> webhook verification + idempotency + reconciliation, verified-revenue accounting,
+> the Failure Lab, and deterministic evaluation — is built and covered by automated
+> tests.
 >
-> To keep the distinction honest, sections use these tags:
+> **Known exceptions (see also the root `README.md`):** production authentication is
+> not yet implemented (a server-side development operator with the `APPROVER` role
+> stands in), and `packages/evaluation` is an interface stub — the working
+> deterministic evaluation lives in `packages/lifecycle` and is surfaced on the
+> `/evaluations` page.
 >
-> - **[PLANNED]** — intended design, not yet built.
-> - **[IMPLEMENTED]** — exists and works in the codebase today.
-> - **[PARTIAL]** — scaffolding or a subset exists.
->
-> As modules land, their tags should be updated in the same commit that implements
-> them. Do not mark anything `IMPLEMENTED` before it is merged and tested.
->
-> **Current global status: everything below is [PLANNED].**
+> Some sections below retain **[PLANNED]** / **[IMPLEMENTED]** / **[PARTIAL]** tags
+> and a phase-by-phase build roadmap; these are preserved as design and historical
+> context, not as a claim that features are missing.
 
 ---
 
@@ -209,8 +211,8 @@ packages. Data flows from the payment edge inward to a deterministic decision co
                │                             │                              │
                ▼                             │                              ▼
      ┌────────────────────┐                  │                    ┌────────────────────┐
-     │  Agent runtime      │                  │                    │ Analytics /         │
-     │  (Claude, tools,    │                  │                    │ Evaluation engine   │
+     │  AI runtime         │                  │                    │ Analytics /         │
+     │  (Gemini,           │                  │                    │ Evaluation engine   │
      │  structured output) │                  │                    └─────────┬──────────┘
      └─────────┬──────────┘                   │                              │
                │ proposal (NO financial power)│                              │
@@ -243,9 +245,9 @@ packages. Data flows from the payment edge inward to a deterministic decision co
   request validation, and routing. Hosts the webhook receiver endpoint.
 - **Application services** — domain orchestration: case management, the approval
   workflow state machine, and action dispatch. Coordinates agent → policy → adapter.
-- **Agent runtime (`packages/agent`)** — wraps the Claude API/Agent SDK, exposes
-  read-only tools plus a _propose_ tool, and returns structured, validated output. It
-  has **no dependency on the Razorpay adapter**.
+- **AI runtime (`packages/ai`)** — wraps the Google Gemini REST API with strict
+  structured output and returns a schema-validated recommendation. It has **no
+  dependency on the Razorpay adapter** and exposes **no `execute` surface**.
 - **Policy engine (`packages/policy-engine`)** — pure, deterministic authorization.
   The single gate to any financial action. No network, no LLM, no randomness.
 - **Razorpay adapter (`packages/razorpay`)** — the only code permitted to call Razorpay
@@ -290,8 +292,8 @@ The core pipeline is event-driven and idempotent end to end. **[PLANNED]**
      - open or update a RecoveryCase; quantify amount at risk
         │
         ▼
- (5) Agent decision  (agent runtime)
-     - Claude reads the case via read-only tools
+ (5) AI recommendation  (Gemini, packages/ai)
+     - Gemini receives a whitelisted, non-secret case summary
      - emits a structured RecoveryDecision proposal (diagnosis, action, confidence)
      - performs NO financial action
         │
@@ -755,8 +757,8 @@ Ordered so that the **safety gate exists before the AI can propose executable ac
   revenue.
 - **Phase 5 — Policy engine.** Pure guardrail library with exhaustive unit tests.
   **Built before the agent.**
-- **Phase 6 — Agent.** Claude tools (read-only + propose), schema-validated output,
-  `AgentRun`/`AgentToolCall` trace recording.
+- **Phase 6 — AI (Gemini).** Google Gemini structured-output recommendations,
+  schema-validated, with `AgentRun`/`AgentToolCall` trace recording.
 - **Phase 7 — Approval & execution.** Approval queue UI, action state machine, gated
   Razorpay execution, outcome-verification webhooks.
 - **Phase 8 — Simulator & Failure Lab.** Synthetic datasets and injectable failure

@@ -2,7 +2,7 @@
   "name": "recoveros",
   "version": "0.0.0",
   "private": true,
-  "description": "AI Revenue Recovery Control Plane for merchants (scaffold).",
+  "description": "RecoverOS — AI Revenue Recovery Operating System: detects revenue at risk and safely recovers it (Razorpay Test Mode).",
   "packageManager": "pnpm@11.1.2",
   "engines": {
     "node": ">=22 <23",

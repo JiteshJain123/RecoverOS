@@ -14,11 +14,12 @@ intelligence ──▶ strategy provider ──▶ RecoveryPlan ──▶ policy
 
 - A strategy provider may only **propose**. It never executes a financial
   action, never messages a customer, never calls a PSP, never calls Gemini.
-- Gemini (when added) produces a **structured recommendation only**. The
-  deterministic policy engine decides whether a recommendation is allowed. Only
-  an approved action can eventually reach a payment-provider adapter.
-- **No Gemini, no Razorpay, no messaging, no retries, no AI decisions** are
-  implemented in this phase.
+- Gemini produces a **structured recommendation only**. The deterministic policy
+  engine decides whether a recommendation is allowed. Only an approved action can
+  eventually reach a payment-provider adapter.
+- This deterministic strategy layer itself makes **no Gemini/AI calls, no Razorpay
+  calls, no messaging, and no retries** — it only proposes plans; those concerns
+  live in the AI, policy, execution, and payments layers.
 
 ## Strategies
 
